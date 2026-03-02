@@ -740,19 +740,6 @@ function DashboardPage({ user, onLogout }) {
   canDelete={perms.can_delete}
   onDelete={() => setConfirmDeleteOpen(true)}
 />
-            <div
-              style={{
-                padding: "8px 16px",
-                cursor: "pointer",
-              }}
-              onClick={() => {
-                setConfirmDeleteOpen(true);
-              }}
-            >
-              🗑 Delete Selected ({selectedRows.size})
-            </div>
-          </div>
-        )}
       </main>
 
       <Modal
