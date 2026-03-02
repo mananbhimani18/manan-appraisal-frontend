@@ -11,8 +11,8 @@ import logo from "../pages/logo.png";
 import Skeleton from "react-loading-skeleton";
 import AddUserForm from "../components/AddUserForm";
 import SetRoleForm from "../components/SetRoleForm";
-
-
+import { motion } from "framer-motion";
+import ContextMenu from "../components/ContextMenu";
 
 export default function InvalidDataPage({ user, onLogout }) {
   const [invalidData, setInvalidData] = useState([]);
@@ -28,7 +28,20 @@ export default function InvalidDataPage({ user, onLogout }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [weights, setWeights] = useState([]);
   const [showWeights, setShowWeights] = useState(false);
-
+  const [sortKey, setSortKey] = useState("id");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [selectedRows, setSelectedRows] = useState(new Set());
+  const [perms, setPerms] = useState({
+    can_add: false,
+    can_update: false,
+    can_delete: false,
+  });
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+  });
   const fetchInvalid = async () => {
     try {
       setLoading(true);
@@ -65,59 +78,146 @@ export default function InvalidDataPage({ user, onLogout }) {
     }
   };
 
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      const username = localStorage.getItem("user") || user;
+      if (!username) return;
 
-const handleToggleTheme = () => {
-  const themes = [
-    "hulk",
-    "thanos",
-    "frost",
-    "batman",
-    "light",
-    "emerald",
-    "ocean",
-    "sunset",
-    "spiderman",
-    "deep",
-    "violet",
-    "contrast",
-    "red",
-  ];
+      try {
+        const res = await fetch(`/api/permissions/${username}`);
+        if (res.ok) {
+          const p = await res.json();
+          setPerms({
+            can_add: !!p.can_add,
+            can_update: !!p.can_update,
+            can_delete: !!p.can_delete,
+          });
+        }
+      } catch (err) {
+        console.error("Permission fetch failed", err);
+      }
+    };
 
-  const current = localStorage.getItem("theme") || "hulk";
-  const next = themes[(themes.indexOf(current) + 1) % themes.length];
+    fetchPermissions();
+  }, [user]);
 
-  localStorage.setItem("theme", next);
-  document.body.setAttribute("data-theme", next);
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      // only close if clicking outside context menu
+      if (!e.target.closest(".custom-context-menu")) {
+        setContextMenu({ visible: false, x: 0, y: 0 });
+      }
+    };
 
-  // ✅ floating theme label (must be inside function)
-  const el = document.createElement("div");
-  el.innerText = `Theme: ${next}`;
+    window.addEventListener("click", handleGlobalClick);
 
-  Object.assign(el.style, {
-    position: "fixed",
-    top: "20px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    padding: "14px 24px",
-    borderRadius: "12px",
-    background: "rgba(0,0,0,0.75)",
-    color: "#fff",
-    fontSize: "18px",
-    fontWeight: "600",
-    zIndex: 9999,
-    backdropFilter: "blur(6px)",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-    opacity: "1",
-    transition: "opacity 0.4s ease",
-  });
+    return () => {
+      window.removeEventListener("click", handleGlobalClick);
+    };
+  }, []);
 
-  document.body.appendChild(el);
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== "Escape") return;
 
-  setTimeout(() => {
-    el.style.opacity = "0";
-    setTimeout(() => el.remove(), 400);
-  }, 2000);
-};
+      if (confirmDeleteOpen) {
+        setConfirmDeleteOpen(false);
+        return;
+      }
+
+      if (modal.isOpen || showWeights) {
+        setShowWeights(false);
+        setModal({ isOpen: false });
+        return;
+      }
+
+      if (contextMenu.visible) {
+        setContextMenu({ visible: false, x: 0, y: 0 });
+        return;
+      }
+
+      if (selectedRows.size > 0) {
+        setSelectedRows(new Set());
+      }
+    };
+
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [
+    confirmDeleteOpen,
+    modal.isOpen,
+    showWeights,
+    contextMenu.visible,
+    selectedRows.size,
+  ]);
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+      if (e.key.toLowerCase() === "t") {
+        handleToggleTheme();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, []);
+  const handleToggleTheme = () => {
+    const themes = [
+      "hulk",
+      "thanos",
+      "frost",
+      "batman",
+      "light",
+      "emerald",
+      "ocean",
+      "sunset",
+      "spiderman",
+      "deep",
+      "violet",
+      "contrast",
+      "red",
+    ];
+
+    const current = localStorage.getItem("theme") || "hulk";
+    const next = themes[(themes.indexOf(current) + 1) % themes.length];
+
+    localStorage.setItem("theme", next);
+    document.body.setAttribute("data-theme", next);
+
+    // ✅ floating theme label (must be inside function)
+    const el = document.createElement("div");
+    el.innerText = `Theme: ${next}`;
+
+    Object.assign(el.style, {
+      position: "fixed",
+      top: "20px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      padding: "14px 24px",
+      borderRadius: "12px",
+      background: "rgba(0,0,0,0.75)",
+      color: "#fff",
+      fontSize: "18px",
+      fontWeight: "600",
+      zIndex: 9999,
+      backdropFilter: "blur(6px)",
+      boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+      opacity: "1",
+      transition: "opacity 0.4s ease",
+    });
+
+    document.body.appendChild(el);
+
+    setTimeout(() => {
+      el.style.opacity = "0";
+      setTimeout(() => el.remove(), 400);
+    }, 2000);
+  };
 
   const handleChangePassword = () => {
     // render change password form
@@ -125,6 +225,18 @@ const handleToggleTheme = () => {
       isOpen: true,
       title: "Change Password",
       form: { type: "change-password" },
+    });
+  };
+
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+
+    if (selectedRows.size === 0) return;
+
+    setContextMenu({
+      visible: true,
+      x: e.pageX,
+      y: e.pageY,
     });
   };
 
@@ -147,6 +259,15 @@ const handleToggleTheme = () => {
         title: "Set Role",
         form: { type: "set-role", users: [] },
       });
+    }
+  };
+
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortOrder("asc");
     }
   };
 
@@ -183,7 +304,6 @@ const handleToggleTheme = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Delete this invalid record?")) return;
     try {
       const res = await fetch(`/api/invaliddata/${id}`, {
         method: "DELETE",
@@ -311,26 +431,83 @@ const handleToggleTheme = () => {
     return true;
   });
 
-  const paginated = filteredInvalid.slice(
+  const sortedInvalid = [...filteredInvalid].sort((a, b) => {
+    let aVal = a[sortKey];
+    let bVal = b[sortKey];
+
+    const isNumeric = (v) =>
+      v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v));
+
+    // If both values are numeric (or numeric-strings), compare numerically
+    if (isNumeric(aVal) && isNumeric(bVal)) {
+      return sortOrder === "asc"
+        ? Number(aVal) - Number(bVal)
+        : Number(bVal) - Number(aVal);
+    }
+
+    if (aVal === null || aVal === undefined) aVal = "";
+    if (bVal === null || bVal === undefined) bVal = "";
+
+    aVal = String(aVal).toLowerCase();
+    bVal = String(bVal).toLowerCase();
+
+    if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const paginated = sortedInvalid.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize,
   );
   const totalPages = Math.max(1, Math.ceil(filteredInvalid.length / pageSize));
 
+  useEffect(() => {
+    const pages = Math.ceil(filteredInvalid.length / pageSize) || 1;
+
+    if (currentPage > pages) {
+      setCurrentPage(pages);
+    }
+  }, [filteredInvalid.length, pageSize, currentPage]);
+
   if (loading) {
+    console.log("INVALID PAGE PERMS:", perms);
     return (
-      <main style={{ padding: 20 }}>
-        <Skeleton height={50} width={320} />
-        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-          <Skeleton height={36} width={180} />
-          <Skeleton height={36} width={180} />
-          <Skeleton height={36} width={120} />
-        </div>
-        <Skeleton count={10} height={42} style={{ marginTop: 15 }} />
-      </main>
+      <>
+        <header>
+          <div className="logo-wrap">
+            <Skeleton circle={true} height={42} width={42} />
+          </div>
+          <h1 style={{ margin: 0 }}>
+            <Skeleton height={22} width={140} />
+          </h1>
+          <div id="status" style={{ marginLeft: 8 }}>
+            <Skeleton height={14} width={60} />
+          </div>
+          <div
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+            }}
+          >
+            <Skeleton circle={true} height={28} width={28} />
+            <Skeleton height={36} width={80} />
+          </div>
+        </header>
+
+        <main style={{ padding: 20 }}>
+          <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+            <Skeleton height={36} width={180} />
+            <Skeleton height={36} width={180} />
+            <Skeleton height={36} width={120} />
+          </div>
+          <Skeleton count={10} height={42} style={{ marginTop: 15 }} />
+        </main>
+      </>
     );
   }
-
 
   return (
     <>
@@ -348,8 +525,12 @@ const handleToggleTheme = () => {
           />
         </div>
         <h1>Invalid Data</h1>
-        <div id="status">Ready</div>
-        <button type="button" className="theme-btn" onClick={handleToggleTheme}>
+        <button
+          type="button"
+          className="theme-btn"
+          title="Press (T) to Toggle Theme"
+          onClick={handleToggleTheme}
+        >
           🌙
         </button>
         <UserMenu
@@ -364,7 +545,12 @@ const handleToggleTheme = () => {
       </header>
 
       <main>
-        <section id="controls">
+        <motion.section
+          id="controls"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+        >
           <input
             id="q"
             type="search"
@@ -423,7 +609,14 @@ const handleToggleTheme = () => {
           >
             Export CSV
           </button>
-
+          <button
+            type="button"
+            onClick={fetchInvalid}
+            title="Refresh Data"
+            style={{ color: "aliceblue" }}
+          >
+            🔄 Refresh
+          </button>
           <label
             id="invFilterWrap"
             className="inv-filter"
@@ -479,24 +672,46 @@ const handleToggleTheme = () => {
               Next
             </button>
           </div>
-        </section>
+        </motion.section>
 
-        <Summary employees={paginated} />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.35 }}
+        >
+          <Summary employees={paginated} />
+        </motion.div>
 
-        <EmployeeTable
-          employees={paginated}
-          onSort={() => { }}
-          onEdit={handleEdit}
-          onViewDetails={handleViewDetails}
-          onDelete={handleDelete}
-          sortKey={"id"}
-          sortOrder={"asc"}
-          showInvalid={true}
-          showViewMore={false}
-          perms={{ can_add: false, can_update: true, can_delete: true }}
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.35 }}
+        >
+          <EmployeeTable
+            employees={paginated}
+            onSort={handleSort}
+            onEdit={handleEdit}
+            onViewDetails={handleViewDetails}
+            onDelete={handleDelete}
+            onContextMenu={handleContextMenu}
+            sortKey={sortKey}
+            sortOrder={sortOrder}
+            showInvalid={true}
+            showViewMore={false}
+            perms={perms}
+            selectedRows={selectedRows}
+            setSelectedRows={setSelectedRows}
+          />
+        </motion.div>
+        <ContextMenu
+  visible={contextMenu.visible}
+  x={contextMenu.x}
+  y={contextMenu.y}
+  selectedCount={selectedRows.size}
+  canDelete={perms.can_delete}
+  onDelete={() => setConfirmDeleteOpen(true)}
+/>
       </main>
-
       <Modal
         isOpen={modal.isOpen || showWeights}
         title={modal.title}
@@ -574,6 +789,60 @@ const handleToggleTheme = () => {
           />
         )}
       </Modal>
+      {confirmDeleteOpen && (
+        <Modal
+          isOpen={true}
+          title="Confirm Delete"
+          onClose={() => setConfirmDeleteOpen(false)}
+        >
+          <div style={{ padding: 20 }}>
+            <p style={{ marginBottom: 20 }}>
+              Are you sure you want to delete{" "}
+              <strong>{selectedRows.size}</strong> record(s)?
+            </p>
+
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
+            >
+              <button onClick={() => setConfirmDeleteOpen(false)}>
+                Cancel
+              </button>
+
+              <button
+                style={{
+                  background: "#dc2626",
+                  color: "white",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+                onClick={async () => {
+                  await Promise.all(
+                    [...selectedRows].map((id) =>
+                      fetch(`/api/invaliddata/${id}`, {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          actor: localStorage.getItem("user"),
+                        }),
+                      }),
+                    ),
+                  );
+
+                  setSelectedRows(new Set());
+                  setContextMenu({ visible: false, x: 0, y: 0 });
+                  setConfirmDeleteOpen(false);
+
+                  fetchInvalid();
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }

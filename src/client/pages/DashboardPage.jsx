@@ -12,11 +12,9 @@ import PieChart from "../components/PieChart";
 import BarChart from "../components/BarChart";
 import { useNavigate } from "react-router-dom";
 import logo from "../pages/logo.png";
-import Skeleton from 'react-loading-skeleton'
-
-
-
-
+import Skeleton from "react-loading-skeleton";
+import { motion } from "framer-motion";
+import ContextMenu from "../components/ContextMenu";
 
 function DashboardPage({ user, onLogout }) {
   const [employees, setEmployees] = useState([]);
@@ -42,29 +40,47 @@ function DashboardPage({ user, onLogout }) {
     can_delete: false,
   });
   const [role, setRole] = useState("hr");
+  const [selectedRows, setSelectedRows] = useState(new Set());
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+  });
 
   const navigate = useNavigate();
-  
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+
+      const empRes = await fetch("/api/employees");
+      if (!empRes.ok) throw new Error("Failed to fetch employees");
+
+      const data = await empRes.json();
+      setEmployees(data);
+
+      const depts = [...new Set(data.map((e) => e.department).filter(Boolean))];
+      const grds = [...new Set(data.map((e) => e.grade).filter(Boolean))];
+
+      setDepartments(depts.sort());
+      setGrades(grds.sort());
+    } catch (error) {
+      setModal({
+        isOpen: true,
+        title: "Error",
+        content: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fetch employees and permissions
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const empRes = await fetch("/api/employees");
-        if (!empRes.ok) throw new Error("Failed to fetch employees");
-        const employees = await empRes.json();
-        setEmployees(employees);
-
-        // departments/grades
-        const depts = [
-          ...new Set(employees.map((e) => e.department).filter(Boolean)),
-        ];
-        const grds = [
-          ...new Set(employees.map((e) => e.grade).filter(Boolean)),
-        ];
-        setDepartments(depts.sort());
-        setGrades(grds.sort());
+        await fetchEmployees();
 
         // attempt to fetch permissions/role for current user
         const username = localStorage.getItem("user") || user;
@@ -75,7 +91,21 @@ function DashboardPage({ user, onLogout }) {
             );
             if (r.ok) {
               const p = await r.json();
-              setPerms(p);
+
+              setPerms({
+                can_add:
+                  p?.can_add === true ||
+                  p?.can_add === "true" ||
+                  p?.can_add === 1,
+                can_update:
+                  p?.can_update === true ||
+                  p?.can_update === "true" ||
+                  p?.can_update === 1,
+                can_delete:
+                  p?.can_delete === true ||
+                  p?.can_delete === "true" ||
+                  p?.can_delete === 1,
+              });
             }
           } catch (_) {}
           try {
@@ -103,6 +133,75 @@ function DashboardPage({ user, onLogout }) {
     fetchData();
   }, [user]);
 
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      if (!e.target.closest(".custom-context-menu")) {
+        setContextMenu({ visible: false, x: 0, y: 0 });
+      }
+    };
+
+    window.addEventListener("click", handleGlobalClick);
+
+    return () => {
+      window.removeEventListener("click", handleGlobalClick);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== "Escape") return;
+
+      // 1️⃣ Close confirm delete modal FIRST
+      if (confirmDeleteOpen) {
+        setConfirmDeleteOpen(false);
+        return;
+      }
+
+      // 2️⃣ Close normal modal
+      if (modal.isOpen) {
+        handleCloseModal();
+        return;
+      }
+
+      // 3️⃣ Close context menu
+      if (contextMenu.visible) {
+        setContextMenu({ visible: false, x: 0, y: 0 });
+        return;
+      }
+
+      // 4️⃣ Deselect rows
+      if (selectedRows.size > 0) {
+        setSelectedRows(new Set());
+      }
+    };
+
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [
+    confirmDeleteOpen, // ✅ add this
+    modal.isOpen,
+    contextMenu.visible,
+    selectedRows,
+  ]);
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+
+      // prevent toggle while typing in inputs
+      if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+      if (e.key.toLowerCase() === "t") {
+        handleToggleTheme();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, []);
+
   // Filter and sort employees
   useEffect(() => {
     let filtered = [...employees];
@@ -124,18 +223,25 @@ function DashboardPage({ user, onLogout }) {
       filtered = filtered.filter((e) => e.grade === gradeFilter);
     }
 
-    // Sort
+    // Sort (handle numeric-like values numerically)
     filtered.sort((a, b) => {
       let aVal = a[sortKey];
       let bVal = b[sortKey];
 
+      const isNumeric = (v) =>
+        v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v));
+
+      if (isNumeric(aVal) && isNumeric(bVal)) {
+        return sortOrder === "asc"
+          ? Number(aVal) - Number(bVal)
+          : Number(bVal) - Number(aVal);
+      }
+
       if (aVal === null || aVal === undefined) aVal = "";
       if (bVal === null || bVal === undefined) bVal = "";
 
-      if (typeof aVal === "string") {
-        aVal = aVal.toLowerCase();
-        bVal = bVal.toLowerCase();
-      }
+      aVal = String(aVal).toLowerCase();
+      bVal = String(bVal).toLowerCase();
 
       if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
       if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
@@ -143,7 +249,6 @@ function DashboardPage({ user, onLogout }) {
     });
 
     setFilteredEmployees(filtered);
-    setCurrentPage(1);
   }, [
     employees,
     searchQuery,
@@ -153,6 +258,14 @@ function DashboardPage({ user, onLogout }) {
     sortOrder,
   ]);
 
+  useEffect(() => {
+    const totalPages = Math.ceil(filteredEmployees.length / pageSize) || 1;
+
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [filteredEmployees, pageSize, currentPage]);
+
   const handleSort = (key) => {
     if (sortKey === key) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -160,6 +273,18 @@ function DashboardPage({ user, onLogout }) {
       setSortKey(key);
       setSortOrder("asc");
     }
+  };
+
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+
+    if (selectedRows.size === 0) return;
+
+    setContextMenu({
+      visible: true,
+      x: e.pageX,
+      y: e.pageY,
+    });
   };
 
   const handleExportCSV = () => {
@@ -278,8 +403,7 @@ function DashboardPage({ user, onLogout }) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || res.statusText);
       // refresh lists
-      const empRes = await fetch("/api/employees");
-      if (empRes.ok) setEmployees(await empRes.json());
+      await fetchEmployees();
       if (showInvalid) {
         const invRes = await fetch("/api/invalid");
         if (invRes.ok) setInvalidData(await invRes.json());
@@ -313,39 +437,36 @@ function DashboardPage({ user, onLogout }) {
     document.body.setAttribute("data-theme", next);
 
     // ✅ create floating theme label (NO JSX used)
-  const el = document.createElement("div");
-  el.innerText = `Theme: ${next}`;
+    const el = document.createElement("div");
+    el.innerText = `Theme: ${next}`;
 
-  Object.assign(el.style, {
-  position: "fixed",
-  top: "20px",              // ⭐ center-top position
-  left: "50%",
-  transform: "translateX(-50%)", // only horizontal centering
-  padding: "14px 24px",
-  borderRadius: "12px",
-  background: "rgba(0,0,0,0.75)",
-  color: "#fff",
-  fontSize: "18px",
-  fontWeight: "600",
-  zIndex: 9999,
-  backdropFilter: "blur(6px)",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-  opacity: "1",
-  transition: "opacity 0.4s ease",
-});
+    Object.assign(el.style, {
+      position: "fixed",
+      top: "20px", // ⭐ center-top position
+      left: "50%",
+      transform: "translateX(-50%)", // only horizontal centering
+      padding: "14px 24px",
+      borderRadius: "12px",
+      background: "rgba(0,0,0,0.75)",
+      color: "#fff",
+      fontSize: "18px",
+      fontWeight: "600",
+      zIndex: 9999,
+      backdropFilter: "blur(6px)",
+      boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+      opacity: "1",
+      transition: "opacity 0.4s ease",
+    });
 
+    document.body.appendChild(el);
 
-  document.body.appendChild(el);
-
-  // fade + remove
-  setTimeout(() => {
-    el.style.opacity = "0";
-    setTimeout(() => el.remove(), 400);
-  }, 2000);
-
+    // fade + remove
+    setTimeout(() => {
+      el.style.opacity = "0";
+      setTimeout(() => el.remove(), 400);
+    }, 2000);
   };
 
-  
   const handleChangePassword = () => {
     // render change password form
     setModal({
@@ -402,19 +523,43 @@ function DashboardPage({ user, onLogout }) {
 
   const totalPages = Math.ceil(filteredEmployees.length / pageSize);
 
- if (loading) {
-  return (
-    <main style={{ padding: 20 }}>
-      <Skeleton height={50} width={350} />
-      <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-        <Skeleton height={36} width={180} />
-        <Skeleton height={36} width={180} />
-        <Skeleton height={36} width={120} />
-      </div>
-      <Skeleton count={10} height={42} style={{ marginTop: 15 }} />
-    </main>
-  )
-}
+  if (loading) {
+    return (
+      <>
+        <header>
+          <div className="logo-wrap">
+            <Skeleton circle={true} height={42} width={42} />
+          </div>
+          <h1 style={{ margin: 0 }}>
+            <Skeleton height={22} width={180} />
+          </h1>
+          <div id="status" style={{ marginLeft: 8 }}>
+            <Skeleton height={14} width={60} />
+          </div>
+          <div
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+            }}
+          >
+            <Skeleton circle={true} height={28} width={28} />
+            <Skeleton height={36} width={80} />
+          </div>
+        </header>
+
+        <main style={{ padding: 20 }}>
+          <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+            <Skeleton height={36} width={180} />
+            <Skeleton height={36} width={180} />
+            <Skeleton height={36} width={120} />
+          </div>
+          <Skeleton count={10} height={42} style={{ marginTop: 15 }} />
+        </main>
+      </>
+    );
+  }
 
   return (
     <>
@@ -432,8 +577,12 @@ function DashboardPage({ user, onLogout }) {
             ? "Employee Invalid Data"
             : "Employee Incremented Details"}
         </h1>
-        <div id="status">Ready</div>
-        <button type="button" className="theme-btn" onClick={handleToggleTheme}>
+        <button
+          type="button"
+          className="theme-btn"
+          title="Press (T) to Toggle Theme"
+          onClick={handleToggleTheme}
+        >
           🌙
         </button>
 
@@ -449,7 +598,12 @@ function DashboardPage({ user, onLogout }) {
       </header>
 
       <main>
-        <section id="controls">
+        <motion.section
+          id="controls"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+        >
           <input
             id="q"
             type="search"
@@ -508,6 +662,15 @@ function DashboardPage({ user, onLogout }) {
           >
             Export CSV
           </button>
+          <button
+            type="button"
+            onClick={fetchEmployees}
+            title="Refresh Data"
+            style={{ color: "aliceblue" }}
+          >
+            🔄 Refresh
+          </button>
+
           <span className="spacer"></span>
           <label>
             Rows:
@@ -543,23 +706,53 @@ function DashboardPage({ user, onLogout }) {
               Next
             </button>
           </div>
-        </section>
+        </motion.section>
 
-        <Summary employees={paginatedEmployees} />
+        <div style={{ marginTop: 12 }}>
+          <Summary employees={paginatedEmployees} />
+        </div>
 
-        <EmployeeTable
-          employees={paginatedEmployees}
-          onSort={handleSort}
-          onEdit={handleEdit}
-          onViewDetails={handleViewDetails}
-          onDelete={handleDelete}
-          sortKey={sortKey}
-          sortOrder={sortOrder}
-          showInvalid={showInvalid}
-          // perms={perms}
-          perms={{ can_add: false, can_update: true, can_delete: true }}
-
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.35 }}
+        >
+          <EmployeeTable
+            employees={paginatedEmployees}
+            onSort={handleSort}
+            onEdit={handleEdit}
+            onViewDetails={handleViewDetails}
+            onDelete={handleDelete}
+            onContextMenu={handleContextMenu}
+            sortKey={sortKey}
+            sortOrder={sortOrder}
+            showInvalid={showInvalid}
+            perms={perms}
+            selectedRows={selectedRows}
+            setSelectedRows={setSelectedRows}
+          />
+        </motion.div>
+        <ContextMenu
+  visible={contextMenu.visible}
+  x={contextMenu.x}
+  y={contextMenu.y}
+  selectedCount={selectedRows.size}
+  canDelete={perms.can_delete}
+  onDelete={() => setConfirmDeleteOpen(true)}
+/>
+            <div
+              style={{
+                padding: "8px 16px",
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                setConfirmDeleteOpen(true);
+              }}
+            >
+              🗑 Delete Selected ({selectedRows.size})
+            </div>
+          </div>
+        )}
       </main>
 
       <Modal
@@ -675,6 +868,61 @@ function DashboardPage({ user, onLogout }) {
           />
         )}
       </Modal>
+      {confirmDeleteOpen && (
+        <Modal
+          isOpen={true}
+          title="Confirm Delete"
+          onClose={() => setConfirmDeleteOpen(false)}
+        >
+          <div style={{ padding: 20 }}>
+            <p style={{ marginBottom: 20 }}>
+              Are you sure you want to delete{" "}
+              <strong>{selectedRows.size}</strong> record(s)?
+            </p>
+
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
+            >
+              <button onClick={() => setConfirmDeleteOpen(false)}>
+                Cancel
+              </button>
+
+              <button
+                style={{
+                  background: "#dc2626",
+                  color: "white",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+                onClick={async () => {
+                  await Promise.all(
+                    [...selectedRows].map((id) =>
+                      fetch(`/api/employeedetails/${id}`, {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          actor: localStorage.getItem("user"),
+                        }),
+                      }),
+                    ),
+                  );
+
+                  setSelectedRows(new Set());
+                  setContextMenu({ visible: false, x: 0, y: 0 });
+                  setConfirmDeleteOpen(false);
+
+                  const empRes = await fetch("/api/employees");
+                  if (empRes.ok) setEmployees(await empRes.json());
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }

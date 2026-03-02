@@ -1,7 +1,32 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
-function EmployeeTable({ employees, onSort, onEdit, onViewDetails, onDelete, sortKey, sortOrder, showInvalid = false, perms = {}, showViewMore = true }) {
-  const [openRowMenu, setOpenRowMenu] = useState(null)
+function EmployeeTable({
+  employees,
+  onSort,
+  onEdit,
+  onViewDetails,
+  onDelete,
+  onContextMenu,
+  sortKey,
+  sortOrder,
+  showInvalid = false,
+  perms = {},
+  showViewMore = true,
+  selectedRows = new Set(),
+  setSelectedRows = () => {}
+}) {
+const [openRowMenu, setOpenRowMenu] = useState(null)
+useEffect(() => {
+  const handleClickOutside = () => {
+    setOpenRowMenu(null);
+  };
+
+  window.addEventListener("click", handleClickOutside);
+
+  return () => {
+    window.removeEventListener("click", handleClickOutside);
+  };
+}, []);
   const formatMoney = (n) => {
     if (n === null || n === undefined) return '—'
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(n)
@@ -12,7 +37,23 @@ function EmployeeTable({ employees, onSort, onEdit, onViewDetails, onDelete, sor
     return sortOrder === 'asc' ? '↑' : '↓'
   }
 
+  const handleRowClick = (e, id) => {
+  if (!e.ctrlKey) {
+    setSelectedRows(new Set([id]))
+  } else {
+    setSelectedRows(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) {
+        newSet.delete(id)
+      } else {
+        newSet.add(id)
+      }
+      return newSet
+    })
+  }
+}
   return (
+    <div className="table-wrap">
     <table id="employees">
       <thead>
         <tr>
@@ -43,11 +84,11 @@ function EmployeeTable({ employees, onSort, onEdit, onViewDetails, onDelete, sor
           )}
           {showInvalid && (
             <>
-              <th className="num" data-key="currentsalary">Current Salary <span className="sort">{renderSortIndicator('currentsalary')}</span></th>
-              <th className="num" data-key="kpiscore">KPI <span className="sort">{renderSortIndicator('kpiscore')}</span></th>
-              <th className="num" data-key="attendance">Attendance <span className="sort">{renderSortIndicator('attendance')}</span></th>
-              <th className="num" data-key="behavioralrating">Behavior <span className="sort">{renderSortIndicator('behavioralrating')}</span></th>
-              <th className="num" data-key="managerrating">Manager <span className="sort">{renderSortIndicator('managerrating')}</span></th>
+              <th className="num" data-key="currentsalary" onClick={() => onSort('currentsalary')} style={{ cursor: 'pointer' }}>Current Salary <span className="sort">{renderSortIndicator('currentsalary')}</span></th>
+              <th className="num" data-key="kpiscore" onClick={() => onSort('kpiscore')} style={{ cursor: 'pointer' }}>KPI <span className="sort">{renderSortIndicator('kpiscore')}</span></th>
+              <th className="num" data-key="attendance" onClick={() => onSort('attendance')} style={{ cursor: 'pointer' }}>Attendance <span className="sort">{renderSortIndicator('attendance')}</span></th>
+              <th className="num" data-key="behavioralrating" onClick={() => onSort('behavioralrating')} style={{ cursor: 'pointer' }}>Behavior <span className="sort">{renderSortIndicator('behavioralrating')}</span></th>
+              <th className="num" data-key="managerrating" onClick={() => onSort('managerrating')} style={{ cursor: 'pointer' }}>Manager <span className="sort">{renderSortIndicator('managerrating')}</span></th>
             </>
           )}
           <th data-key="actions">Actions</th>
@@ -55,7 +96,21 @@ function EmployeeTable({ employees, onSort, onEdit, onViewDetails, onDelete, sor
       </thead>
       <tbody>
         {employees.map((emp) => (
-          <tr key={emp.id} data-id={emp.id}>
+          <tr
+                key={emp.id}
+                data-id={emp.id}
+                onClick={(e) => handleRowClick(e, emp.id)}
+                onContextMenu={(e) => {
+                e.preventDefault();
+                              
+                if (!selectedRows.has(emp.id)) {
+                  setSelectedRows(new Set([emp.id]));
+                }
+              
+                onContextMenu?.(e);
+              }}
+                className={selectedRows.has(emp.id) ? "selected-row" : ""}
+              >
             <td>{emp.id}</td>
             <td>{emp.name}</td>
             <td>{emp.department}</td>
@@ -78,19 +133,26 @@ function EmployeeTable({ employees, onSort, onEdit, onViewDetails, onDelete, sor
             )}
             <td>
               <div className="actions-cell">
-                <div 
-                  className="actions-menu"
-                  onMouseEnter={() => setOpenRowMenu(emp.id)}
-                  onMouseLeave={() => setOpenRowMenu(null)}
-                >
-                  <button className="menu-trigger">⋮</button>
+                <div className="actions-menu">
+  <button
+    className="menu-trigger"
+    onClick={(e) => {
+      e.stopPropagation();
+      setOpenRowMenu(openRowMenu === emp.id ? null : emp.id);
+    }}
+  >
+    ⋮
+  </button>
                   {openRowMenu === emp.id && (
                     <div className="menu-actions">
                       {showViewMore && (
                         <button
                           className="action-btn view"
                           title="View Details"
-                          onClick={() => onViewDetails(emp.id)}
+                          onClick={(e) => {
+  e.stopPropagation()
+  onViewDetails(emp.id)
+}}
                         >
                           👁️
                         </button>
@@ -99,16 +161,22 @@ function EmployeeTable({ employees, onSort, onEdit, onViewDetails, onDelete, sor
                         <button
                           className="action-btn edit"
                           title="Edit"
-                          onClick={() => onEdit(emp)}
+                          onClick={(e) => {
+  e.stopPropagation()
+  onEdit(emp)
+}}
                         >
                           ✎
                         </button>
                       )}
-                      {perms.can_delete && (
+                      {perms?.can_delete === true && (
                         <button
                           className="action-btn delete"
                           title="Delete"
-                          onClick={() => onDelete(emp.id)}
+                          onClick={(e) => {
+                          e.stopPropagation()
+                          onDelete(emp.id)
+                        }}
                         >
                           🗑️
                         </button>
@@ -122,6 +190,7 @@ function EmployeeTable({ employees, onSort, onEdit, onViewDetails, onDelete, sor
         ))}
       </tbody>
     </table>
+  </div>
   )
 }
 

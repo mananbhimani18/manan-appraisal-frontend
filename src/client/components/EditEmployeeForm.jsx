@@ -53,8 +53,7 @@ export default function EditEmployeeForm({ data = {}, onClose, isInvalid = false
         behavioralrating: behavioralrating ?? '',
         managerrating: managerrating ?? ''
       }
-      // const res = await fetch(`https://appraisalcalculationbackend.onrender.com/api/invaliddata/${data.id}`, {
-      const res = await fetch(`api/invaliddata/${data.id}`, {
+      const res = await fetch(`/api/invaliddata/${data.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
@@ -86,8 +85,7 @@ export default function EditEmployeeForm({ data = {}, onClose, isInvalid = false
         increment: increment ?? '',
         incrementedsalary: incrementedsalary ?? ''
       }
-      // const res = await fetch(`https://appraisalcalculationbackend.onrender.com/api/employeedetails/${data.id}`, {
-      const res = await fetch(`api/employeedetails/${data.id}`, {
+      const res = await fetch(`/api/employeedetails/${data.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })

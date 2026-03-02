@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from "react";
+import { motion } from "framer-motion";
 
 function Summary({ employees }) {
   const stats = useMemo(() => {
@@ -7,54 +8,129 @@ function Summary({ employees }) {
         count: 0,
         avgSalary: 0,
         avgIncrement: 0,
-        avgIncSalary: 0
-      }
+        avgIncSalary: 0,
+      };
     }
 
     const salaries = employees
-      .map(e => e.currentsalary)
-      .filter(s => s !== null && s !== undefined && !isNaN(s))
-    
+      .map((e) => e.currentsalary)
+      .filter((s) => s !== null && s !== undefined && !isNaN(s));
+
     const increments = employees
-      .map(e => e.increment)
-      .filter(i => i !== null && i !== undefined && !isNaN(i))
-    
+      .map((e) => e.increment)
+      .filter((i) => i !== null && i !== undefined && !isNaN(i));
+
     const incSalaries = employees
-      .map(e => e.incrementedsalary)
-      .filter(s => s !== null && s !== undefined && !isNaN(s))
+      .map((e) => e.incrementedsalary)
+      .filter((s) => s !== null && s !== undefined && !isNaN(s));
 
     return {
       count: employees.length,
-      avgSalary: salaries.length > 0 ? salaries.reduce((a, b) => a + Number(b), 0) / salaries.length : 0,
-      avgIncrement: increments.length > 0 ? increments.reduce((a, b) => a + Number(b), 0) / increments.length : 0,
-      avgIncSalary: incSalaries.length > 0 ? incSalaries.reduce((a, b) => a + Number(b), 0) / incSalaries.length : 0
-    }
-  }, [employees])
+      avgSalary:
+        salaries.length > 0
+          ? salaries.reduce((a, b) => a + Number(b), 0) / salaries.length
+          : 0,
+      avgIncrement:
+        increments.length > 0
+          ? increments.reduce((a, b) => a + Number(b), 0) / increments.length
+          : 0,
+      avgIncSalary:
+        incSalaries.length > 0
+          ? incSalaries.reduce((a, b) => a + Number(b), 0) / incSalaries.length
+          : 0,
+    };
+  }, [employees]);
 
   const formatMoney = (n) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(n)
-  }
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+    }).format(n);
+  };
+  useEffect(() => {
+    const cards = document.querySelectorAll("#summary .card");
 
+    const move = (e) => {
+      const r = e.currentTarget.getBoundingClientRect();
+      e.currentTarget.style.setProperty("--x", `${e.clientX - r.left}px`);
+      e.currentTarget.style.setProperty("--y", `${e.clientY - r.top}px`);
+    };
+
+    cards.forEach((card) => card.addEventListener("mousemove", move));
+
+    return () => {
+      cards.forEach((card) => card.removeEventListener("mousemove", move));
+    };
+  }, [employees]);
   return (
-    <section id="summary">
-      <div className="card">
+    <motion.section
+      id="summary"
+      initial="hidden"
+      animate="show"
+      variants={{
+        hidden: {},
+        show: {
+          transition: {
+            staggerChildren: 0.12,
+          },
+        },
+      }}
+    >
+      <motion.div
+        className="card"
+        variants={{
+          hidden: { opacity: 0, y: 30, scale: 0.95 },
+          show: { opacity: 1, y: 0, scale: 1 },
+        }}
+        transition={{ duration: 0.35 }}
+      >
         <div className="k">Employees</div>
-        <div className="v" id="sum-count">{stats.count}</div>
-      </div>
-      <div className="card">
+        <div className="v" id="sum-count">
+          {stats.count}
+        </div>
+      </motion.div>
+      <motion.div
+        className="card"
+        variants={{
+          hidden: { opacity: 0, y: 30, scale: 0.95 },
+          show: { opacity: 1, y: 0, scale: 1 },
+        }}
+        transition={{ duration: 0.35 }}
+      >
         <div className="k">Avg Salary</div>
-        <div className="v" id="sum-avg-sal">{formatMoney(stats.avgSalary)}</div>
-      </div>
-      <div className="card">
+        <div className="v" id="sum-avg-sal">
+          {formatMoney(stats.avgSalary)}
+        </div>
+      </motion.div>
+      <motion.div
+        className="card"
+        variants={{
+          hidden: { opacity: 0, y: 30, scale: 0.95 },
+          show: { opacity: 1, y: 0, scale: 1 },
+        }}
+        transition={{ duration: 0.35 }}
+      >
         <div className="k">Avg Increment %</div>
-        <div className="v" id="sum-avg-inc">{stats.avgIncrement ? stats.avgIncrement.toFixed(2) : '0'}</div>
-      </div>
-      <div className="card">
+        <div className="v" id="sum-avg-inc">
+          {stats.avgIncrement ? stats.avgIncrement.toFixed(2) : "0"}
+        </div>
+      </motion.div>
+      <motion.div
+        className="card"
+        variants={{
+          hidden: { opacity: 0, y: 30, scale: 0.95 },
+          show: { opacity: 1, y: 0, scale: 1 },
+        }}
+        transition={{ duration: 0.35 }}
+      >
         <div className="k">Avg Incremented</div>
-        <div className="v" id="sum-avg-incsal">{formatMoney(stats.avgIncSalary)}</div>
-      </div>
-    </section>
-  )
+        <div className="v" id="sum-avg-incsal">
+          {formatMoney(stats.avgIncSalary)}
+        </div>
+      </motion.div>
+    </motion.section>
+  );
 }
 
-export default Summary
+export default Summary;
