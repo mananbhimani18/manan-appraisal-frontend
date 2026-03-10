@@ -528,14 +528,40 @@ overflow: hidden;
 }
 
 #pager button {
-  background: rgba(255,255,255,0.06);
-  color: var(--fg);
-  border: 1px solid var(--border);
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-}
+  height: var(--control-h);
+  padding: 0 14px;
 
+  background: var(--surface);
+  color: var(--fg);
+
+  border: 1px solid var(--border);
+  border-radius: 8px;
+
+  font-weight: 500;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 3px 10px rgba(0,0,0,0.25);
+
+  transition: all .18s ease;
+}
+#pager button:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface));
+  transform: translateY(-1px);
+}
+#pager button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
 #summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
