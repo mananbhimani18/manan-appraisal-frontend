@@ -407,16 +407,6 @@ main {
   height: var(--control-h);
 }
 
-#invFilterWrap select {
-  background: var(--surface);
-  color: var(--fg);
-  border: 1px solid var(--border);
-  padding: 6px 10px;
-  border-radius: 999px;
-  min-width: 220px;
-  height: calc(var(--control-h) - 8px);
-}
-
 #invFilterWrap select:hover { border-color: var(--accent); }
 #invFilterWrap select:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -527,7 +517,8 @@ table {
 
 .table-wrap{
   border-radius:14px;
-  overflow:visible;
+  overflow:auto;
+max-height:600px;
   background: var(--surface-weak);
   backdrop-filter: blur(10px);
   box-shadow:
@@ -552,7 +543,7 @@ thead th{
   top: 0;
   background: color-mix(in srgb,var(--bg) 85%,transparent);
   backdrop-filter: blur(8px);
-  z-index: 2;
+  z-index: 5;
   
 }
 .num {
@@ -921,6 +912,8 @@ tbody tr:nth-child(even){
 #employees tbody tr {
   transition: background-color 0.15s ease, box-shadow 0.15s ease;
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none; /* Safari */
 }
 
 
@@ -1184,4 +1177,59 @@ tbody tr:nth-child(even){
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.record-count{
+  font-size: 13px;
+  color: var(--muted);
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+#controls select,
+#invFilterWrap select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  padding: 8px 38px 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+
+  background:
+    linear-gradient(
+      to bottom,
+      var(--surface),
+      color-mix(in srgb, var(--surface) 85%, black)
+    ),
+url("data:image/svg+xml,%3Csvg viewBox='0 0 20 20' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 7l5 6 5-6'/%3E%3C/svg%3E");
+
+background-repeat: no-repeat;
+  background-position: center, right 10px center;
+  background-size: 100%, 12px;
+
+  color: var(--fg);
+  font-weight: 500;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 3px 10px rgba(0,0,0,0.25);
+
+  transition: all 0.18s ease;
+}
+#controls select:hover,
+#invFilterWrap select:hover {
+  border-color: var(--accent);
+}
+
+#controls select:focus,
+#invFilterWrap select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+select option {
+  background: var(--surface);
+  color: var(--fg);
 }

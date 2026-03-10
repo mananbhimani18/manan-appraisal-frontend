@@ -277,9 +277,12 @@ useEffect(() => {
       const currentPageIds = paginatedEmployees.map(emp => emp.id);
 
       setSelectedRows(prev => {
-        if (prev.size === currentPageIds.length) {
-          return new Set(); // deselect
+        const allSelected = currentPageIds.every(id => prev.has(id));
+
+        if (allSelected) {
+          return new Set();
         }
+
         return new Set(currentPageIds); // select all
       });
     }
@@ -349,7 +352,7 @@ useEffect(() => {
   ]);
 
   useEffect(() => {
-    const totalPages = Math.ceil(filteredEmployees.length / pageSize) || 1;
+    const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / pageSize));
 
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
@@ -357,13 +360,13 @@ useEffect(() => {
   }, [filteredEmployees, pageSize, currentPage]);
 
   const handleSort = (key) => {
-    if (sortKey === key) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortKey(key);
-      setSortOrder("asc");
-    }
-  };
+  if (sortKey === key) {
+    setSortOrder(prev => (prev === "asc" ? "desc" : "asc"));
+  } else {
+    setSortKey(key);
+    setSortOrder("asc");
+  }
+};
 
   const handleContextMenu = (e) => {
     e.preventDefault();
@@ -671,7 +674,7 @@ if (selectedIds.length >= 1 && perms.can_delete) {
     }
   });
 }
-  const totalPages = Math.ceil(filteredEmployees.length / pageSize);
+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / pageSize));
 
   if (loading) {
     return (
@@ -822,12 +825,23 @@ if (selectedIds.length >= 1 && perms.can_delete) {
           </button>
 
           <span className="spacer"></span>
+          <span className="record-count">
+            {filteredEmployees.length === 0
+              ? "No employees found"
+              : `Showing ${(currentPage - 1) * pageSize + 1}–${Math.min(
+                  currentPage * pageSize,
+                  filteredEmployees.length
+                )} of ${filteredEmployees.length} employees`}
+          </span>
           <label>
             Rows:
             <select
               id="pageSize"
               value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
+              onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
             >
               <option value="5">5</option>
               <option value="10">10</option>
@@ -1066,7 +1080,7 @@ if (selectedIds.length >= 1 && perms.can_delete) {
   <div
     style={{
       position: "fixed",
-      bottom: "20px",
+      bottom: "100px",
       right: "20px",
       background: "#1f2937",
       color: "white",

@@ -16,6 +16,7 @@ function EmployeeTable({
   setSelectedRows = () => {}
 }) {
 const [openRowMenu, setOpenRowMenu] = useState(null)
+const [lastSelectedIndex, setLastSelectedIndex] = useState(null)
 useEffect(() => {
   const handleClickOutside = () => {
     setOpenRowMenu(null);
@@ -37,19 +38,36 @@ useEffect(() => {
     return sortOrder === 'asc' ? '↑' : '↓'
   }
 
-  const handleRowClick = (e, id) => {
-  if (!e.ctrlKey) {
-    setSelectedRows(new Set([id]))
-  } else {
+ const handleRowClick = (e, id, index) => {
+  if (e.shiftKey && lastSelectedIndex !== null) {
+    const start = Math.min(lastSelectedIndex, index)
+    const end = Math.max(lastSelectedIndex, index)
+
     setSelectedRows(prev => {
       const newSet = new Set(prev)
-      if (newSet.has(id)) {
-        newSet.delete(id)
-      } else {
-        newSet.add(id)
+
+      for (let i = start; i <= end; i++) {
+        newSet.add(employees[i].id)
       }
+
       return newSet
     })
+  } 
+  else if (e.ctrlKey) {
+    setSelectedRows(prev => {
+      const newSet = new Set(prev)
+
+      if (newSet.has(id)) newSet.delete(id)
+      else newSet.add(id)
+
+      return newSet
+    })
+
+    setLastSelectedIndex(index)
+  } 
+  else {
+    setSelectedRows(new Set([id]))
+    setLastSelectedIndex(index)
   }
 }
   return (
@@ -95,11 +113,11 @@ useEffect(() => {
         </tr>
       </thead>
       <tbody>
-        {employees.map((emp) => (
+        {employees.map((emp, index) => (
           <tr
                 key={emp.id}
                 data-id={emp.id}
-                onClick={(e) => handleRowClick(e, emp.id)}
+                onClick={(e) => handleRowClick(e, emp.id, index)}
                 onContextMenu={(e) => {
                 e.preventDefault();
                               

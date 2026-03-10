@@ -590,9 +590,12 @@ useEffect(() => {
       const currentPageIds = paginated.map(item => item.id);
 
       setSelectedRows(prev => {
-        if (prev.size === currentPageIds.length) {
-          return new Set(); // deselect all
+        const allSelected = currentPageIds.every(id => prev.has(id));
+
+        if (allSelected) {
+          return new Set(); // deselect
         }
+
         return new Set(currentPageIds); // select all
       });
     }
@@ -779,6 +782,14 @@ useEffect(() => {
             </select>
           </label>
           <span className="spacer"></span>
+                  <span className="record-count">
+          {filteredInvalid.length === 0
+            ? "No records found"
+            : `Showing ${(currentPage - 1) * pageSize + 1}–${Math.min(
+                currentPage * pageSize,
+                filteredInvalid.length
+              )} of ${filteredInvalid.length} records`}
+        </span>
           <label>
             Rows:
             <select
@@ -993,7 +1004,7 @@ useEffect(() => {
   <div
     style={{
       position: "fixed",
-      bottom: "20px",
+      bottom: "100px",
       right: "20px",
       background: "#1f2937",
       color: "white",
