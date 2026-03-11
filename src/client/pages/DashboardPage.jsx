@@ -815,14 +815,33 @@ if (selectedIds.length >= 1 && perms.can_delete) {
           >
             Export CSV
           </button>
-          <button
-            type="button"
-            onClick={fetchEmployees}
-            title="Refresh Data"
-            style={{ color: "aliceblue" }}
-          >
-            🔄 Refresh
-          </button>
+         <button
+  type="button"
+  onClick={fetchEmployees}
+  title="Refresh Data"
+  style={{
+    color: "aliceblue",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="23 4 23 10 17 10" />
+    <polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15" />
+  </svg>
+</button>
 
           <span className="spacer"></span>
           <span className="record-count">
