@@ -221,6 +221,17 @@ const handleVerifyOtp = async () => {
         borderRadius:'6px'
       }}
     />
+    {message && (
+  <div
+    style={{
+      fontSize: "14px",
+      marginBottom: "12px",
+      color: isError ? "#ef4444" : "#22c55e"
+    }}
+  >
+    {message}
+  </div>
+)}
 
     <button
   type="button"
@@ -233,27 +244,27 @@ const handleVerifyOtp = async () => {
     return
   }
 
-  try {
-    setIsError(false)
-    setMessage("")
+try {
+  setIsError(false)
+  setMessage("")
 
-    const res = await fetch('/api/send-otp', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ username, email })
-    })
+  const res = await fetch('/api/send-otp', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ username, email })
+  })
 
-    const data = await res.json()
+  const data = await res.json()
 
-    if (!res.ok) throw new Error(data.error || "OTP failed")
+  if (!res.ok) throw new Error(data.error || "OTP failed")
 
-    setMessage("OTP sent to your email")
-    setResetStage("otp")
+  setMessage("OTP sent to your email")
+  setResetStage("otp")
 
-  } catch(err) {
-    setIsError(true)
-    setMessage(err.message)
-  }
+} catch(err) {
+  setIsError(true)
+  setMessage(err.message)
+}
 }}
 >
   Send OTP
