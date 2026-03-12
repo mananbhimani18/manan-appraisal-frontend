@@ -301,6 +301,36 @@ h1 {
 
 .menu hr { border: 0; border-top: 1px solid var(--border); margin: 6px 0; }
 
+.card{
+  position: relative;
+}
+
+.card-icon{
+  position:absolute;
+  top:16px;
+  right:18px;
+
+  width:32px;
+  height:32px;
+
+  opacity:0.95;
+
+  filter: drop-shadow(0 3px 5px rgb(255, 255, 255));
+
+  transition: transform 0.25s ease, opacity 0.25s ease;
+
+  animation: iconFloat 5s ease-in-out infinite;
+}
+
+.card:hover .card-icon{
+  transform: translateY(-3px) scale(1.12) rotate(6deg);
+  opacity:1;
+}
+
+@keyframes iconFloat{
+  0%,100%{ transform: translateY(0px); }
+  50%{ transform: translateY(-3px); }
+}
 .card select {
   width: 100%;
   background: var(--surface);
@@ -596,6 +626,7 @@ overflow: hidden;
   font-weight: 600;
   margin-top: 6px;
 }
+
 
 table {
   width: 100%;

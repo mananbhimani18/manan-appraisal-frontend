@@ -1,4 +1,8 @@
 import React, { useMemo, useEffect } from "react";
+import empIcon from "../../assets/icons/employees.png";
+import salaryIcon from "../../assets/icons/avg-salary.png";
+import incIcon from "../../assets/icons/avg-increment.png";
+import incSalaryIcon from "../../assets/icons/avg-incremented.png";
 import { motion } from "framer-motion";
 
 function Summary({ employees }) {
@@ -78,57 +82,67 @@ function Summary({ employees }) {
       }}
     >
       <motion.div
-        className="card"
-        variants={{
-          hidden: { opacity: 0, y: 30, scale: 0.95 },
-          show: { opacity: 1, y: 0, scale: 1 },
-        }}
-        transition={{ duration: 0.35 }}
-      >
-        <div className="k">Employees</div>
-        <div className="v" id="sum-count">
-          {stats.count}
-        </div>
-      </motion.div>
-      <motion.div
-        className="card"
-        variants={{
-          hidden: { opacity: 0, y: 30, scale: 0.95 },
-          show: { opacity: 1, y: 0, scale: 1 },
-        }}
-        transition={{ duration: 0.35 }}
-      >
-        <div className="k">Avg Salary</div>
-        <div className="v" id="sum-avg-sal">
-          {formatMoney(stats.avgSalary)}
-        </div>
-      </motion.div>
-      <motion.div
-        className="card"
-        variants={{
-          hidden: { opacity: 0, y: 30, scale: 0.95 },
-          show: { opacity: 1, y: 0, scale: 1 },
-        }}
-        transition={{ duration: 0.35 }}
-      >
-        <div className="k">Avg Increment %</div>
-        <div className="v" id="sum-avg-inc">
-          {stats.avgIncrement ? stats.avgIncrement.toFixed(2) : "0"}
-        </div>
-      </motion.div>
-      <motion.div
-        className="card"
-        variants={{
-          hidden: { opacity: 0, y: 30, scale: 0.95 },
-          show: { opacity: 1, y: 0, scale: 1 },
-        }}
-        transition={{ duration: 0.35 }}
-      >
-        <div className="k">Avg Incremented</div>
-        <div className="v" id="sum-avg-incsal">
-          {formatMoney(stats.avgIncSalary)}
-        </div>
-      </motion.div>
+  className="card"
+  variants={{
+    hidden: { opacity: 0, y: 30, scale: 0.95 },
+    show: { opacity: 1, y: 0, scale: 1 },
+  }}
+  transition={{ duration: 0.35 }}
+>
+
+  <img src={empIcon} className="card-icon" alt="employees" />
+
+  <div className="k">Employees</div>
+  <div className="v" id="sum-count">
+    {stats.count}
+  </div>
+
+</motion.div>
+     <motion.div
+  className="card"
+  variants={{
+    hidden: { opacity: 0, y: 30, scale: 0.95 },
+    show: { opacity: 1, y: 0, scale: 1 },
+  }}
+  transition={{ duration: 0.35 }}
+>
+  <img src={salaryIcon} className="card-icon" alt="salary"/>
+
+  <div className="k">Avg Salary</div>
+  <div className="v" id="sum-avg-sal">
+    {formatMoney(stats.avgSalary)}
+  </div>
+</motion.div>
+    <motion.div
+  className="card"
+  variants={{
+    hidden: { opacity: 0, y: 30, scale: 0.95 },
+    show: { opacity: 1, y: 0, scale: 1 },
+  }}
+  transition={{ duration: 0.35 }}
+>
+  <img src={incIcon} className="card-icon" alt="increment"/>
+
+  <div className="k">Avg Increment %</div>
+  <div className="v" id="sum-avg-inc">
+    {stats.avgIncrement ? stats.avgIncrement.toFixed(2) : "0"}
+  </div>
+</motion.div>
+    <motion.div
+  className="card"
+  variants={{
+    hidden: { opacity: 0, y: 30, scale: 0.95 },
+    show: { opacity: 1, y: 0, scale: 1 },
+  }}
+  transition={{ duration: 0.35 }}
+>
+  <img src={incSalaryIcon} className="card-icon" alt="incremented salary"/>
+
+  <div className="k">Avg Incremented</div>
+  <div className="v" id="sum-avg-incsal">
+    {formatMoney(stats.avgIncSalary)}
+  </div>
+</motion.div>
     </motion.section>
   );
 }
