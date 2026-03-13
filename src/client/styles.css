@@ -15,7 +15,12 @@
   --text-primary: var(--fg);
   --text-muted: var(--muted);
   --text-strong: var(--fg);
+  
 }
+.header-title{
+  font-family: "Fira Sans", sans-serif;
+}
+
 
 body[data-theme="thanos"] {
   color-scheme: dark;
@@ -45,6 +50,7 @@ body[data-theme="frost"] {
   --border: #0f2a36;
   --surface: #0a1c24;
   --surface-weak: rgba(14, 165, 233, 0.08);
+  
 }
 
 body[data-theme="hulk"] {
@@ -635,7 +641,6 @@ table {
   width: 100%;
   border-collapse: collapse;
   background: rgba(255,255,255,0.02);
-  
 }
 
 .table-wrap{
@@ -1404,3 +1409,21 @@ select option {
   background: var(--surface);
   color: var(--fg);
 }
+#nprogress .bar {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+
+  background: #3b82f6 !important;
+  height: 4px !important;
+  width: 100%;
+
+  z-index: 99999 !important;
+
+  box-shadow: 0 0 10px #3b82f6, 0 0 5px #3b82f6;
+}
+
+#nprogress .spinner {
+  display: none !important;
+}
+

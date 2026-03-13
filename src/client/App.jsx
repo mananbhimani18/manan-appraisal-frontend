@@ -5,7 +5,30 @@ import DashboardPage from './pages/DashboardPage'
 import InvalidDataPage from './pages/InvalidDataPage'
 import { useSessionTimeout } from './hooks/useSessionTimeout'
 import { initSessionAwareFetch } from './hooks/sessionFetchInterceptor'
+import NProgress from "nprogress"
+import "nprogress/nprogress.css"
+import { useLocation } from "react-router-dom"
+NProgress.configure({ showSpinner: false, trickleSpeed: 120 })
 
+function RouteProgress() {
+  const location = useLocation()
+
+  useEffect(() => {
+    NProgress.start()
+
+    const finish = setTimeout(() => {
+      NProgress.done()
+    }, 500)
+
+    return () => {
+      clearTimeout(finish)
+      NProgress.done()
+    }
+
+  }, [location])
+
+  return null
+}
 function App() {
 const getInitialAuth = () => {
   const auth = localStorage.getItem('auth')
@@ -92,6 +115,7 @@ useEffect(() => {
 
   return (
     <Router>
+       <RouteProgress />
       <Routes>
         <Route 
           path="/login" 

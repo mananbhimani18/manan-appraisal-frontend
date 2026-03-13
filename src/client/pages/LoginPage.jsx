@@ -2,6 +2,9 @@ import React, { useState } from 'react'
 import logo from "../pages/logo.png";
 import PasswordResetForm from '../components/PasswordResetForm'
 
+import NProgress from "nprogress"
+import "nprogress/nprogress.css"
+
 function LoginPage({ onLogin }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -19,6 +22,7 @@ function LoginPage({ onLogin }) {
     setIsError(false)
 
     try {
+       NProgress.start()
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,9 +39,13 @@ function LoginPage({ onLogin }) {
       const serverData = await serverRes.json()
 
       localStorage.setItem('serverStart', serverData.startTime)
+        NProgress.done()
 
-      onLogin(username)
+      setTimeout(() => {
+  onLogin(username)
+}, 300)
     } catch (err) {
+       NProgress.done()
       setIsError(true)
       setMessage(err.message)
     }

@@ -702,7 +702,7 @@ useEffect(() => {
             }}
           />
         </div>
-        <h1>Invalid Data</h1>
+        <h1 className="header-title">Invalid Data</h1>
     <button
       type="button"
       className="theme-btn"

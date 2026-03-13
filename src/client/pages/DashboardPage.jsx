@@ -755,7 +755,7 @@ if (selectedIds.length >= 1 && perms.can_delete) {
             onError={(e) => e.target.remove()}
           />
         </div>
-        <h1>
+        <h1 className="header-title">
           {showInvalid
             ? "Employee Invalid Data"
             : "Employee Incremented Details"}
