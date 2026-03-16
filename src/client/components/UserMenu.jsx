@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
 
-function UserMenu({ user, onLogout, onChangePassword, onAddUser, onSetRole, onDeleteUser, onActivityLog, onToggleTheme }) {
+function UserMenu({ user, role, onLogout, onChangePassword, onAddUser, onSetRole, onDeleteUser, onActivityLog, onToggleTheme }) {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef(null)
-  let closeTimer = null;   // ✅ ADD HERE
-
+const closeTimer = useRef(null);
 
   const handleTheme = () => {
     onToggleTheme && onToggleTheme()
@@ -35,13 +34,13 @@ function UserMenu({ user, onLogout, onChangePassword, onAddUser, onSetRole, onDe
   ref={menuRef}
   className="menu-wrap"
   onMouseEnter={() => {
-    if (closeTimer) clearTimeout(closeTimer);
+    if (closeTimer.current) clearTimeout(closeTimer.current);
     setIsOpen(true);
   }}
   onMouseLeave={() => {
-    closeTimer = setTimeout(() => {
-      setIsOpen(false);
-    }, 200); // ⭐ delay prevents gap closing
+ closeTimer.current = setTimeout(() => {
+  setIsOpen(false);
+}, 200);
   }}
 >
         <button
@@ -50,32 +49,37 @@ function UserMenu({ user, onLogout, onChangePassword, onAddUser, onSetRole, onDe
         className="btn"
         onClick={() => setIsOpen(!isOpen)}
       >
-        {user} ▾
+        {user} {role === "admin" ? "(Admin)" : ""} ▾
       </button>
       <div id="userMenu" className={`menu ${isOpen ? '' : 'hidden'}`} role="menu">
         <button type="button" className="menu-item" id="menuChangePassword" onClick={() => handleClick(onChangePassword)}>
           Change Password
         </button>
-        <button type="button" className="menu-item" id="menuAddUser" onClick={() => handleClick(onAddUser)}>
-          Add User
-        </button>
-        <button type="button" className="menu-item" id="menuSetRole" onClick={() => handleClick(onSetRole)}>
-          Set Role
-        </button>
-        <button type="button" className="menu-item" id="menuDeleteUser" onClick={() => handleClick(onDeleteUser)}>
-          Delete User
-        </button>
-        {onActivityLog && (
-          <button
-            type="button"
-            className="menu-item"
-            id="menuActivityLog"
-            onClick={() => handleClick(onActivityLog)}
-          >
-            Activity Log
-          </button>
-        )}
-        <hr />
+        {role === "admin" && (
+  <>
+    <button type="button" className="menu-item" id="menuAddUser" onClick={() => handleClick(onAddUser)}>
+      Add User
+    </button>
+
+    <button type="button" className="menu-item" id="menuSetRole" onClick={() => handleClick(onSetRole)}>
+      Set Role
+    </button>
+
+    <button type="button" className="menu-item" id="menuDeleteUser" onClick={() => handleClick(onDeleteUser)}>
+      Delete User
+    </button>
+
+    <button
+      type="button"
+      className="menu-item"
+      id="menuActivityLog"
+      onClick={() => handleClick(onActivityLog)}
+    >
+      Activity Log
+    </button>
+  </>
+)}
+        {role === "admin" && <hr />}
         <button type="button" className="menu-item" id="menuTheme" onClick={() => handleTheme()}>
           Toggle Theme
         </button>

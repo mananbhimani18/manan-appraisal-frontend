@@ -802,12 +802,13 @@ if (selectedIds.length >= 1 && perms.can_delete) {
 
         <UserMenu
           user={user}
+          role={role}
           onLogout={onLogout}
           onChangePassword={handleChangePassword}
           onAddUser={handleAddUser}
           onSetRole={handleSetRole}
           onDeleteUser={handleDeleteUser}
-          onActivityLog={role === "admin" ? () => navigate("/activity") : null}
+          onActivityLog={() => navigate("/activity")}
           onToggleTheme={handleToggleTheme}
         />
       </header>
