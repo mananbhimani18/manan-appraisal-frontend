@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import CircularProgress from "@mui/material/CircularProgress";
+import Box from "@mui/material/Box";
 
 function ActivityLogPage() {
   const [logs, setLogs] = useState([]);
@@ -8,6 +10,9 @@ function ActivityLogPage() {
   const [displayCount, setDisplayCount] = useState(0);
 const [displayLabel, setDisplayLabel] = useState("events");
 const [blinkButton, setBlinkButton] = useState(false);
+const [notAuthorized, setNotAuthorized] = useState(false);
+const [loading, setLoading] = useState(true);
+
  const handleFilterToggle = () => {
   if (filter === "all") {
     setFilter("add_employee");
@@ -35,28 +40,31 @@ const [blinkButton, setBlinkButton] = useState(false);
   setTimeout(() => setBlinkButton(false), 400);
 };
 
-  useEffect(() => {
-    const fetchLogs = async () => {
+useEffect(() => {
+  const fetchLogs = async () => {
+    try {
       const res = await fetch("/api/activitylog", {
         headers: {
           "x-user": localStorage.getItem("user"),
         },
       });
 
-      if (!res.ok) {
-        alert("Not authorized");
+      if (res.status === 401 || res.status === 403) {
+        setNotAuthorized(true);
         return;
       }
 
       const data = await res.json();
       setLogs(data);
-    };
+    } catch (err) {
+      console.error("Failed to fetch logs", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchLogs();
-  }, []);
-
-
-
+  fetchLogs();
+}, []);
   const getActionStyle = (action) => {
     if (action.includes("delete")) {
       return { background: "#dc262620", color: "#ef4444" };
@@ -155,6 +163,60 @@ const labelColor =
     : displayLabel === "delete_employee"
     ? "#ef4444"
     : "var(--fg)";
+if (notAuthorized) {
+  return (
+    <div
+      style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "var(--fg)"
+      }}
+    >
+      <h1 style={{ fontSize: 40 }}>🚫 Access Denied</h1>
+
+      <p style={{ marginTop: 10, color: "var(--muted)" }}>
+        Only administrators can view the activity log.
+      </p>
+
+      <button
+        onClick={() => navigate("/")}
+        style={{
+          marginTop: 20,
+          padding: "10px 18px",
+          borderRadius: 8,
+          border: "1px solid var(--border)",
+          background: "var(--surface)",
+          cursor: "pointer"
+        }}
+      >
+        ← Back to Dashboard
+      </button>
+    </div>
+  );
+}
+
+if (loading) {
+  return (
+    <Box
+      sx={{
+        height: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: 2
+      }}
+    >
+      <CircularProgress size={60} sx={{ color: "var(--fg)" }} />
+<span style={{ color: "var(--muted)" }}>
+  Loading activity log...
+</span>
+    </Box>
+  );
+}
   return (
 <div className="activity-log-page">
     <div style={{ padding: 30 }}>
