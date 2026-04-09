@@ -906,6 +906,7 @@ if (selectedIds.length >= 1 && perms.can_delete) {
             src={logo}
             alt="TecnoPrism"
             className="brand"
+            onClick={() => navigate("/")}   
             onError={(e) => e.target.remove()}
           />
         </div>

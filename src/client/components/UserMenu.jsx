@@ -46,7 +46,7 @@ const closeTimer = useRef(null);
         <button
         id="userMenuBtn"
         type="button"
-        className="btn"
+        className="btn btn-user"
         onClick={() => setIsOpen(!isOpen)}
       >
         {user} {role === "admin" ? "(Admin)" : ""} ▾

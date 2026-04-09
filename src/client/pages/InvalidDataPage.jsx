@@ -870,6 +870,7 @@ ${emp.id}\t${emp.name}\t${emp.department}\t${emp.currentsalary ?? ""}\t${emp.kpi
             src={logo}
             alt="TecnoPrism"
             className="brand"
+              onClick={() => navigate("/")}   // 👈 ADD THIS
             onError={(e) => {
               e.target.style.display = "none";
               e.target.nextSibling &&
