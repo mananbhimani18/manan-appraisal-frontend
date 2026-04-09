@@ -16,6 +16,8 @@ import ContextMenu from "../components/ContextMenu";
 import themeIcon from "../../assets/icons/theme-color.png";
 import { formatINR } from "../utils";
 import FilterDropdown from "../components/FilterDropdown";
+import PasswordResetForm from "../components/PasswordResetForm";
+import DeleteUserForm from "../components/DeleteUserForm";
 
 export default function InvalidDataPage({ user, onLogout }) {
   const [invalidData, setInvalidData] = useState([]);
@@ -1160,6 +1162,20 @@ ${emp.id}\t${emp.name}\t${emp.department}\t${emp.currentsalary ?? ""}\t${emp.kpi
             onClose={handleCloseModal}
           />
         )}
+{modal.form && modal.form.type === "change-password" && (
+  <PasswordResetForm
+    username={user}
+    onSuccess={handleCloseModal}
+    onCancel={handleCloseModal}
+  />
+)}
+
+{modal.form && modal.form.type === "delete-user" && (
+  <DeleteUserForm
+    users={modal.form.users || []}
+    onClose={handleCloseModal}
+  />
+)}
       </Modal>
       {confirmDeleteOpen && (
         <Modal
