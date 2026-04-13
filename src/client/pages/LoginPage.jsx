@@ -83,11 +83,11 @@ function LoginPage({ onLogin }) {
   };
 
   const handleVerifyOtp = async () => {
-    if (!otp.trim()) {
-      setIsError(true);
-      setMessage("Enter OTP");
-      return;
-    }
+   if (otp.length !== 6) {
+  setIsError(true);
+  setMessage("Enter valid 6-digit OTP");
+  return;
+}
 
     try {
       setIsError(false);
@@ -111,6 +111,7 @@ function LoginPage({ onLogin }) {
     } catch (err) {
       setIsError(true);
       setMessage(err.message);
+     setOtp("");
     }
   };
 
@@ -129,7 +130,11 @@ function LoginPage({ onLogin }) {
     <main className="login-shell">
       <div className="login-card card">
         <div className="login-brand-wrap">
-          <img src={logo} alt="TecnoPrism" className="brand large login-brand" />
+          <img
+            src={logo}
+            alt="TecnoPrism"
+            className="brand large login-brand"
+          />
         </div>
 
         <div className="login-content">
@@ -137,7 +142,9 @@ function LoginPage({ onLogin }) {
             <form onSubmit={handleSubmit} className="login-form">
               <div>
                 <h1 className="login-title">Sign In</h1>
-                <p className="login-subtitle">Secure access to your appraisal dashboard.</p>
+                <p className="login-subtitle">
+                  Secure access to your appraisal dashboard.
+                </p>
               </div>
 
               <div className="login-field">
@@ -169,7 +176,9 @@ function LoginPage({ onLogin }) {
                     type="button"
                     className="login-toggle"
                     onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
                     {showPassword ? (
                       <svg
@@ -208,7 +217,9 @@ function LoginPage({ onLogin }) {
               </div>
 
               {message && (
-                <div className={`login-message ${isError ? "login-message--error" : "login-message--success"}`}>
+                <div
+                  className={`login-message ${isError ? "login-message--error" : "login-message--success"}`}
+                >
                   {message}
                 </div>
               )}
@@ -218,7 +229,11 @@ function LoginPage({ onLogin }) {
               </button>
 
               <div className="login-footer">
-                <button type="button" onClick={handleForgot} className="login-link-button">
+                <button
+                  type="button"
+                  onClick={handleForgot}
+                  className="login-link-button"
+                >
                   Forgot password?
                 </button>
               </div>
@@ -240,7 +255,9 @@ function LoginPage({ onLogin }) {
               </div>
 
               {message && (
-                <div className={`login-message ${isError ? "login-message--error" : "login-message--success"}`}>
+                <div
+                  className={`login-message ${isError ? "login-message--error" : "login-message--success"}`}
+                >
                   {message}
                 </div>
               )}
@@ -289,27 +306,45 @@ function LoginPage({ onLogin }) {
               </button>
             </div>
           ) : resetStage === "otp" ? (
-            <div className="login-form">
-              <h2 className="login-title">Enter OTP</h2>
+  <div className="login-form">
+    <h2 className="login-title">Enter OTP</h2>
 
-              <div className="login-field">
-                <label htmlFor="otp">OTP</label>
-                <input
-                  id="otp"
-                  type="text"
-                  placeholder="Enter OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className="login-input"
-                />
-              </div>
+    <div className="login-field">
+      <label htmlFor="otp">OTP</label>
+      <input
+        id="otp"
+        type="text"
+        placeholder="Enter OTP"
+        value={otp}
+        onChange={(e) => {
+          const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+          setOtp(value);
+        }}
+        maxLength={6}
+        className="login-input"
+      />
+    </div>
 
-              <button className="btn btn-primary full-width" onClick={handleVerifyOtp}>
-                Verify OTP
-              </button>
-            </div>
-          ) : resetStage === "reset" ? (
-            <PasswordResetForm
+    {/* ✅ ADD THIS */}
+    {message && (
+      <div
+        className={`login-message ${
+          isError ? "login-message--error" : "login-message--success"
+        }`}
+      >
+        {message}
+      </div>
+    )}
+
+    <button
+      className="btn btn-primary full-width"
+      onClick={handleVerifyOtp}
+    >
+      Verify OTP
+    </button>
+  </div>
+) : resetStage === "reset" ? (
+  <PasswordResetForm
               username={username}
               onSuccess={handleResetSuccess}
               onCancel={handleResetCancel}

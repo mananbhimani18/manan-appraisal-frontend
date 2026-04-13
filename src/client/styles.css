@@ -392,9 +392,9 @@ h1 {
   width: 100%;
 
   background: rgba(255, 255, 255, 0.04); /* fixed */
-  color: #e2e8f0;
+  color: #000000;
 
-  border: 1px solid rgba(255, 255, 255, 0.12); /* fixed */
+  border: 1px solid rgba(0, 0, 0, 0.247); /* fixed */
 
   padding: 8px 10px;
   border-radius: 8px;
